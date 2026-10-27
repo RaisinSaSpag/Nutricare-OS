@@ -2,23 +2,24 @@
 import { useNutriCare } from '../../context/NutriCareContext';
 import { BiometricRing } from '../common/BiometricRing';
 import { formatKcal } from '../../utils/formatters';
-import { Flame, Utensils, Scale, ShieldCheck, AlertCircle } from 'lucide-react';
+import { Flame, Utensils, ShieldCheck, AlertCircle } from 'lucide-react';
 
 export const EnergyBalance: React.FC = () => {
   const { dailyTotals, activePatient, wearables, policyViolationsCount } = useNutriCare();
 
+  const pct = (value: number, target: number) => (target > 0 ? Math.round((value / target) * 100) : 0);
   const prescribedCalories = activePatient.currentPrescription.dailyCaloriesTarget;
   const burnedTotal = wearables.basalCalories + wearables.activeCalories;
   const netBalance = dailyTotals.calories - burnedTotal;
 
   // Calorie ring progress
-  const calPercent = Math.round((dailyTotals.calories / prescribedCalories) * 100);
-  // Carbs ring progress (based on 50g * 3 meals = ~150g target)
+  const calPercent = pct(dailyTotals.calories, prescribedCalories);
+  // Carb target (g/day) = prescribed kcal x carb ratio / 4 kcal per gram
   const targetCarbsG = Math.round((prescribedCalories * (activePatient.currentPrescription.carbRatioPercent / 100)) / 4);
-  const carbPercent = Math.round((dailyTotals.carbs / targetCarbsG) * 100);
+  const carbPercent = pct(dailyTotals.carbs, targetCarbsG);
   // Water ring progress
   const targetWater = activePatient.currentPrescription.fluidTargetMl;
-  const waterPercent = Math.round((wearables.waterIntakeMl / targetWater) * 100);
+  const waterPercent = pct(wearables.waterIntakeMl, targetWater);
 
   return (
     <div className="bg-white rounded-2xl border border-canvas-border p-4 shadow-soft-sm">
@@ -52,8 +53,8 @@ export const EnergyBalance: React.FC = () => {
           color="#0D9488"
           trackColor="#CCFBF1"
           label="Calories Intake"
-          valueDisplay={`${dailyTotals.calories}`}
-          sublabel={`/ ${prescribedCalories}`}
+          valueDisplay={Math.round(dailyTotals.calories).toLocaleString()}
+          sublabel={`/ ${prescribedCalories.toLocaleString()}`}
         />
         <BiometricRing
           progress={carbPercent}

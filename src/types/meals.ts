@@ -30,7 +30,9 @@ export interface Meal {
   id: string;
   patientId: string;
   name: string;
-  timestamp: string;
+  timestamp: string;     // display string, e.g. "Today at 08:15 AM"
+  date: string;          // local calendar day, YYYY-MM-DD (drives daily totals)
+  loggedAt: number;      // epoch ms, orders meals within a day for cumulative policy checks
   slot: MealSlot;
   nutrition: NutritionalValues;
   imageUrl?: string;

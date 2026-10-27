@@ -18,8 +18,8 @@ export const PolicyAlertBadge: React.FC<PolicyAlertBadgeProps> = ({
   if (!results || results.length === 0) {
     return (
       <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
-        <CheckCircle2 className="w-3 h-3 text-emerald-600" />
-        <span>Compliant</span>
+        <AlertTriangle className="w-3 h-3 text-slate-500" />
+        <span>No rules applied</span>
       </span>
     );
   }
@@ -55,7 +55,7 @@ export const PolicyAlertBadge: React.FC<PolicyAlertBadgeProps> = ({
       };
 
   return (
-    <div className="w-full">
+    <div className="w-full" role="status" aria-live="polite">
       <div className="flex items-center justify-between">
         <div
           className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ${badgeConfig.bg} ${badgeConfig.text} border ${badgeConfig.border}`}
@@ -63,7 +63,7 @@ export const PolicyAlertBadge: React.FC<PolicyAlertBadgeProps> = ({
           {badgeConfig.icon}
           <span>{badgeConfig.label}</span>
           {badgeConfig.count > 0 && (
-            <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-white font-bold shadow-xs">
+            <span className="px-1.5 py-0.5 rounded-full text-[10px] bg-white font-bold shadow-sm">
               {badgeConfig.count}
             </span>
           )}

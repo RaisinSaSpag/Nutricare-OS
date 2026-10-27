@@ -1,7 +1,7 @@
 ﻿import React, { useState } from 'react';
 import { useNutriCare } from '../../../context/NutriCareContext';
 import { Pill, ShieldCheck, Target, Plus, Trash2, CheckCircle2 } from 'lucide-react';
-import { formatKcal } from '../../../utils/formatters';
+import {} from '../../../utils/formatters';
 
 export const Step3Intervention: React.FC = () => {
   const { chart, updateIntervention, policyRules, togglePolicyRule } = useNutriCare();
@@ -53,7 +53,7 @@ export const Step3Intervention: React.FC = () => {
               key={rule.id}
               className={`p-3.5 rounded-xl border transition-all ${
                 rule.isActive
-                  ? 'border-teal-300 bg-teal-50/40 shadow-xs'
+                  ? 'border-teal-300 bg-teal-50/40 shadow-sm'
                   : 'border-slate-200 bg-slate-50/50 opacity-70'
               }`}
             >
@@ -61,7 +61,7 @@ export const Step3Intervention: React.FC = () => {
                 <div>
                   <div className="flex items-center gap-2">
                     <span className="font-bold text-slate-900">{rule.name}</span>
-                    <span className="font-mono text-[10px] px-1.5 py-0.2 rounded bg-slate-200 text-slate-700 font-bold">
+                    <span className="font-mono text-[10px] px-1.5 py-0.5 rounded bg-slate-200 text-slate-700 font-bold">
                       {rule.code}
                     </span>
                   </div>
@@ -72,6 +72,9 @@ export const Step3Intervention: React.FC = () => {
 
                 <button
                   type="button"
+                  role="switch"
+                  aria-checked={rule.isActive}
+                  aria-label={`Enable ${rule.name}`}
                   onClick={() => togglePolicyRule(rule.id)}
                   className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
                     rule.isActive ? 'bg-clinical-teal' : 'bg-slate-300'
@@ -87,11 +90,11 @@ export const Step3Intervention: React.FC = () => {
 
               {/* Threshold limits list */}
               <div className="mt-2.5 pt-2 border-t border-slate-200/60 flex flex-wrap gap-2 text-[10px] font-mono text-slate-700">
-                {rule.mealMaxSodium && <span>Meal Na &lt;= {rule.mealMaxSodium}mg</span>}
-                {rule.dailyMaxSodium && <span>Daily Na &lt;= {rule.dailyMaxSodium}mg</span>}
-                {rule.mealMinCarbs && <span>Carbs {rule.mealMinCarbs}-{rule.mealMaxCarbs}g</span>}
-                {rule.mealMinFiber && <span>Fiber &gt;= {rule.mealMinFiber}g</span>}
-                {rule.mealMaxPotassium && <span>Potassium &lt;= {rule.mealMaxPotassium}mg</span>}
+                {rule.mealMaxSodium !== undefined && <span>Meal Na &lt;= {rule.mealMaxSodium}mg</span>}
+                {rule.dailyMaxSodium !== undefined && <span>Daily Na &lt;= {rule.dailyMaxSodium}mg</span>}
+                {rule.mealMinCarbs !== undefined && <span>Carbs {rule.mealMinCarbs}-{rule.mealMaxCarbs}g</span>}
+                {rule.mealMinFiber !== undefined && <span>Fiber &gt;= {rule.mealMinFiber}g</span>}
+                {rule.mealMaxPotassium !== undefined && <span>Potassium &lt;= {rule.mealMaxPotassium}mg</span>}
               </div>
             </div>
           ))}
@@ -113,7 +116,7 @@ export const Step3Intervention: React.FC = () => {
               Daily Calorie Target (kcal)
             </label>
             <input
-              type="number"
+              type="number" step="any"
               value={intervention.dailyCaloriesTarget}
               onChange={e => handleFieldChange('dailyCaloriesTarget', Number(e.target.value))}
               className="w-full px-3 py-1.5 rounded-xl border border-slate-200 font-bold text-slate-900 focus:border-clinical-teal focus:outline-none"
@@ -125,7 +128,7 @@ export const Step3Intervention: React.FC = () => {
               Carbohydrate Ratio (% kcal)
             </label>
             <input
-              type="number"
+              type="number" step="any"
               value={intervention.carbRatioPercent}
               onChange={e => handleFieldChange('carbRatioPercent', Number(e.target.value))}
               className="w-full px-3 py-1.5 rounded-xl border border-slate-200 font-bold text-amber-700 focus:border-clinical-teal focus:outline-none"
@@ -137,7 +140,7 @@ export const Step3Intervention: React.FC = () => {
               Protein Ratio (% kcal)
             </label>
             <input
-              type="number"
+              type="number" step="any"
               value={intervention.proteinRatioPercent}
               onChange={e => handleFieldChange('proteinRatioPercent', Number(e.target.value))}
               className="w-full px-3 py-1.5 rounded-xl border border-slate-200 font-bold text-teal-700 focus:border-clinical-teal focus:outline-none"
@@ -149,7 +152,7 @@ export const Step3Intervention: React.FC = () => {
               Fat Ratio (% kcal)
             </label>
             <input
-              type="number"
+              type="number" step="any"
               value={intervention.fatRatioPercent}
               onChange={e => handleFieldChange('fatRatioPercent', Number(e.target.value))}
               className="w-full px-3 py-1.5 rounded-xl border border-slate-200 font-bold text-slate-700 focus:border-clinical-teal focus:outline-none"
@@ -174,7 +177,7 @@ export const Step3Intervention: React.FC = () => {
               Sodium Ceiling (mg/day)
             </label>
             <input
-              type="number"
+              type="number" step="any"
               value={intervention.sodiumLimitMg}
               onChange={e => handleFieldChange('sodiumLimitMg', Number(e.target.value))}
               className="w-full px-3 py-1.5 rounded-xl border border-rose-300 font-bold text-rose-800 bg-rose-50/30"
@@ -186,7 +189,7 @@ export const Step3Intervention: React.FC = () => {
               Potassium Ceiling (mg/day)
             </label>
             <input
-              type="number"
+              type="number" step="any"
               value={intervention.potassiumLimitMg}
               onChange={e => handleFieldChange('potassiumLimitMg', Number(e.target.value))}
               className="w-full px-3 py-1.5 rounded-xl border border-amber-300 font-bold text-amber-800 bg-amber-50/30"
@@ -198,7 +201,7 @@ export const Step3Intervention: React.FC = () => {
               Fluid Target (mL/day)
             </label>
             <input
-              type="number"
+              type="number" step="any"
               value={intervention.fluidTargetMl}
               onChange={e => handleFieldChange('fluidTargetMl', Number(e.target.value))}
               className="w-full px-3 py-1.5 rounded-xl border border-slate-200 font-semibold"

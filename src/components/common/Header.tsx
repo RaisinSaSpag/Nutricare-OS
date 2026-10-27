@@ -9,7 +9,6 @@ import {
   ShieldAlert, 
   Video, 
   RotateCcw,
-  Sparkles
 } from 'lucide-react';
 
 export const Header: React.FC = () => {
@@ -68,7 +67,7 @@ export const Header: React.FC = () => {
               <User className="w-3.5 h-3.5" />
               <span>Consumer Portal</span>
               {policyViolationsCount > 0 && (
-                <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-rose-100 text-rose-700 font-bold">
+                <span className="px-1.5 py-0.5 rounded-full text-[10px] bg-rose-100 text-rose-700 font-bold">
                   {policyViolationsCount}
                 </span>
               )}
@@ -95,7 +94,7 @@ export const Header: React.FC = () => {
                 <button
                   onClick={() => setConsumerViewport('mobile')}
                   className={`p-1.5 rounded-md transition-colors ${
-                    consumerViewport === 'mobile' ? 'bg-white text-clinical-teal shadow-xs' : 'text-slate-500 hover:text-slate-800'
+                    consumerViewport === 'mobile' ? 'bg-white text-clinical-teal shadow-sm' : 'text-slate-500 hover:text-slate-800'
                   }`}
                   title="Mobile-First Viewport (Device Simulator)"
                 >
@@ -104,7 +103,7 @@ export const Header: React.FC = () => {
                 <button
                   onClick={() => setConsumerViewport('desktop')}
                   className={`p-1.5 rounded-md transition-colors ${
-                    consumerViewport === 'desktop' ? 'bg-white text-clinical-teal shadow-xs' : 'text-slate-500 hover:text-slate-800'
+                    consumerViewport === 'desktop' ? 'bg-white text-clinical-teal shadow-sm' : 'text-slate-500 hover:text-slate-800'
                   }`}
                   title="Full-Screen Responsive View"
                 >
@@ -136,11 +135,11 @@ export const Header: React.FC = () => {
                 alt={activePatient.name}
                 className="w-8 h-8 rounded-full object-cover border border-teal-300"
               />
-              <div className="hidden sm:block text-left">
+              <div className="block text-left">
                 <select
                   value={activePatient.id}
                   onChange={e => setActivePatientId(e.target.value)}
-                  className="text-xs font-bold text-slate-800 bg-transparent border-none focus:outline-none focus:ring-0 cursor-pointer pr-4"
+                  className="text-xs font-bold text-slate-800 bg-transparent border-none focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-500 rounded cursor-pointer pr-4"
                 >
                   {patients.map(p => (
                     <option key={p.id} value={p.id}>
@@ -157,7 +156,11 @@ export const Header: React.FC = () => {
 
             {/* Reset Defaults button */}
             <button
-              onClick={resetData}
+              onClick={() => {
+                if (window.confirm('Reset all demo data? Meals, charting, notes and wearable sync history return to the seed values.')) {
+                  resetData();
+                }
+              }}
               className="p-1.5 text-slate-400 hover:text-slate-700 rounded-lg hover:bg-slate-100 transition-colors"
               title="Reset state to initial mock data"
             >

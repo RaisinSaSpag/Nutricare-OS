@@ -47,6 +47,26 @@ export const INITIAL_SYNC_HISTORY: SyncHistoryEntry[] = [
   }
 ];
 
+/** Zeroed telemetry for a patient with no device data yet (never another patient's numbers). */
+export function createEmptyWearables(device: WearableDevice = 'Apple HealthKit'): WearableMetrics {
+  return {
+    device,
+    steps: 0,
+    stepGoal: 10000,
+    activeCalories: 0,
+    activeCaloriesGoal: 500,
+    basalCalories: 0,
+    waterIntakeMl: 0,
+    waterGoalMl: 2200,
+    heartRateBpm: 0,
+    restingHeartRateBpm: 0,
+    sleepHours: 0,
+    sleepQualityPercent: 0,
+    lastSyncTimestamp: 'Never',
+    syncStatus: 'idle'
+  };
+}
+
 export function generateMockSyncData(currentMetrics: WearableMetrics, device: WearableDevice): {
   metrics: WearableMetrics;
   historyEntry: SyncHistoryEntry;

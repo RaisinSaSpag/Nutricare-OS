@@ -9,8 +9,6 @@ import {
   FileText, 
   Video, 
   ShieldAlert, 
-  Activity, 
-  Sparkles, 
   Watch,
   UserCheck
 } from 'lucide-react';
@@ -19,7 +17,7 @@ export const ProviderDashboard: React.FC = () => {
   const { policyViolationsCount, teleSessions, activePatient } = useNutriCare();
   const [activeTab, setActiveTab] = useState<'charting' | 'telehealth' | 'policy' | 'wearables'>('charting');
 
-  const inSessionAppointment = teleSessions.find(s => s.status === 'In Session');
+  const inSessionAppointment = teleSessions.find(s => s.status === 'In Session' && s.patientId === activePatient.id);
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
@@ -42,7 +40,7 @@ export const ProviderDashboard: React.FC = () => {
           >
             <FileText className="w-4 h-4 text-clinical-teal" />
             <span>eNCPT Clinical Charting</span>
-            <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-slate-100 font-mono text-slate-700">
+            <span className="px-1.5 py-0.5 rounded-full text-[10px] bg-slate-100 font-mono text-slate-700">
               4 Steps
             </span>
           </button>
@@ -73,7 +71,7 @@ export const ProviderDashboard: React.FC = () => {
             <ShieldAlert className="w-4 h-4 text-amber-500" />
             <span>Policy Engine & Meal Audit</span>
             {policyViolationsCount > 0 && (
-              <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-rose-100 text-rose-700 font-bold">
+              <span className="px-1.5 py-0.5 rounded-full text-[10px] bg-rose-100 text-rose-700 font-bold">
                 {policyViolationsCount} Flags
               </span>
             )}
@@ -94,7 +92,7 @@ export const ProviderDashboard: React.FC = () => {
 
         <div className="hidden sm:flex items-center gap-2 text-xs text-slate-500">
           <UserCheck className="w-4 h-4 text-emerald-600" />
-          <span>Attending: <strong>Dr. Sarah Jenkins, RD</strong></span>
+          <span>Attending: <strong>{activePatient.assignedDietitian}</strong></span>
         </div>
       </div>
 

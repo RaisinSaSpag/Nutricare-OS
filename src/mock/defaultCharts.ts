@@ -1,5 +1,7 @@
-﻿import { ENCPTChart, PESStatement } from '../types/clinical';
+﻿import { ENCPTChart, PESStatement, Patient } from '../types/clinical';
 import { TeleSession } from '../types/telehealth';
+import { calculateIBW, calculateEgfrCkdEpi2021 } from '../utils/calculations';
+import { localIsoDate } from '../utils/dates';
 
 export interface NCPTTerminologyItem {
   code: string;
@@ -65,7 +67,7 @@ export const NCPT_PROBLEM_DICTIONARY: NCPTTerminologyItem[] = [
       'unmonitored intake of high-potassium fruit juices and smoothies'
     ],
     defaultSignsSymptoms: [
-      'serum potassium trending at 4.9 mEq/L in the context of stage 3a CKD (eGFR 52)',
+      'serum potassium above reference range in the context of reduced eGFR (see latest lab panel)',
       'food logs indicating meal potassium values frequently crossing 800 mg',
       'history of hyperkalemic warnings on nephrology metabolic panels'
     ]
@@ -151,14 +153,14 @@ export const INITIAL_ENCPT_CHART: ENCPTChart = {
       weightKg: 74.2,
       bmi: 27.3,
       bmiClassification: 'Overweight (Pre-obesity)',
-      idealBodyWeightKg: 56.7,
+      idealBodyWeightKg: calculateIBW(165, 'Female'),
       weightChange30DaysPercent: -1.2,
       waistCircumferenceCm: 86
     },
     labs: {
       hba1cPercent: 7.8,
       fastingGlucoseMgDl: 156,
-      eGfr: 52,
+      eGfr: calculateEgfrCkdEpi2021(1.35, 62, 'Female'),
       bunMgDl: 26,
       serumCreatinineMgDl: 1.35,
       serumPotassiumMeqL: 4.8,
@@ -216,7 +218,7 @@ export const INITIAL_TELE_SESSIONS: TeleSession[] = [
     scheduledTime: 'Today at 03:00 PM',
     durationMinutes: 45,
     status: 'In Session',
-    roomUrl: 'https://meet.jit.si/NutriCareConsultationRoom-NC89421',
+    roomUrl: 'https://meet.jit.si/nutricare-demo-tele-001',
     mode: 'webrtc_sim',
     sessionNotes: 'Reviewing recent high-sodium dinner flag (Ramen bowl). Patient open to recipe adjustments for lower sodium broths.'
   },
@@ -228,8 +230,43 @@ export const INITIAL_TELE_SESSIONS: TeleSession[] = [
     scheduledTime: 'Tomorrow at 10:00 AM',
     durationMinutes: 30,
     status: 'Upcoming',
-    roomUrl: 'https://meet.jit.si/NutriCareConsultationRoom-NC65128',
+    roomUrl: 'https://meet.jit.si/nutricare-demo-tele-002',
     mode: 'webrtc_sim',
     sessionNotes: 'Initial MNT assessment for Stage 2 HTN and DASH dietary guideline onboarding.'
   }
 ];
+
+/**
+ * Empty chart for a patient with no charting yet. Anthropometrics, labs and prescription
+ * are copied from the patient record (never from another patient's chart). Target values
+ * are copied from current values and must be reviewed by the dietitian.
+ */
+export function createBlankChart(patient: Patient): ENCPTChart {
+  return {
+    id: `chart-${patient.id}`,
+    patientId: patient.id,
+    date: localIsoDate(),
+    dietitianName: patient.assignedDietitian,
+    assessment: {
+      anthropometrics: { ...patient.anthropometrics },
+      labs: { ...patient.labs },
+      dietaryHistoryNotes: '',
+      clinicalImpressions: '',
+    },
+    diagnosisPES: [],
+    intervention: {
+      ...patient.currentPrescription,
+      assignedPolicyIds: [...patient.currentPrescription.assignedPolicyIds],
+      counselingGoals: [...patient.currentPrescription.counselingGoals],
+    },
+    monitoring: {
+      keyIndicators: [],
+      targetWeightKg: patient.anthropometrics.idealBodyWeightKg,
+      targetHbA1c: patient.labs.hba1cPercent,
+      nextAppointmentDate: '',
+      followUpTimelineWeeks: 12,
+      clinicalNotes: '',
+    },
+    status: 'Draft',
+  };
+}

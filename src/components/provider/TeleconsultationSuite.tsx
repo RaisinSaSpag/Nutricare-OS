@@ -12,14 +12,13 @@ import {
   Heart, 
   ShieldAlert, 
   Calendar, 
-  Sparkles, 
-  Maximize2,
-  ExternalLink,
   Save,
   CheckCircle2,
   FileText
 } from 'lucide-react';
 import { formatSteps, formatKcal } from '../../utils/formatters';
+import { canTransition, isSessionStatus } from '../../engine/teleSessionStateMachine';
+import { calculateComplianceScore } from '../../engine/policyEngine';
 
 export const TeleconsultationSuite: React.FC = () => {
   const { 
@@ -29,8 +28,8 @@ export const TeleconsultationSuite: React.FC = () => {
     setActiveTeleSessionId, 
     updateSessionStatus, 
     updateSessionNotes,
+    meals,
     wearables,
-    dailyTotals,
     policyViolationsCount
   } = useNutriCare();
 
@@ -41,11 +40,11 @@ export const TeleconsultationSuite: React.FC = () => {
   const [callDurationSeconds, setCallDurationSeconds] = useState(540); // 9 minutes in
   const [notesSaved, setNotesSaved] = useState(false);
 
+  // Reload the draft only when a different session is selected. Keying on the object reset
+  // unsaved notes whenever the status changed.
   useEffect(() => {
-    if (activeTeleSession) {
-      setLocalNotes(activeTeleSession.sessionNotes || '');
-    }
-  }, [activeTeleSession]);
+    setLocalNotes(activeTeleSession?.sessionNotes || '');
+  }, [activeTeleSession?.id]);
 
   // Call timer simulation if in session
   useEffect(() => {
@@ -71,7 +70,9 @@ export const TeleconsultationSuite: React.FC = () => {
     }
   };
 
-  const complianceScore = Math.max(0, 100 - policyViolationsCount * 30);
+  // Same scoring function as the policy engine, applied to this patient's meals.
+  const complianceScore = calculateComplianceScore(meals.flatMap(m => m.validationResults));
+  const flaggedMeals = meals.filter(m => m.validationResults.some(r => r.severity !== 'COMPLIANT'));
 
   return (
     <div className="space-y-4">
@@ -103,13 +104,21 @@ export const TeleconsultationSuite: React.FC = () => {
             <span className="text-[11px] text-slate-500 font-medium">Session Status:</span>
             <select
               value={activeTeleSession.status}
-              onChange={e => updateSessionStatus(activeTeleSession.id, e.target.value as any)}
+              onChange={e => {
+                const next = e.target.value;
+                if (isSessionStatus(next)) updateSessionStatus(activeTeleSession.id, next);
+              }}
               className="px-2.5 py-1 text-xs font-bold rounded-lg border border-slate-200 bg-slate-50 text-slate-800 focus:outline-none"
             >
-              <option value="Upcoming">Upcoming</option>
-              <option value="In Session">In Session (Active)</option>
-              <option value="Completed">Completed</option>
-              <option value="Cancelled">Cancelled</option>
+              {(['Upcoming', 'In Session', 'Completed', 'Cancelled'] as const).map(option => (
+                <option
+                  key={option}
+                  value={option}
+                  disabled={!canTransition(activeTeleSession.status, option)}
+                >
+                  {option === 'In Session' ? 'In Session (Active)' : option}
+                </option>
+              ))}
             </select>
           </div>
         )}
@@ -177,7 +186,7 @@ export const TeleconsultationSuite: React.FC = () => {
                       className="w-full h-full object-cover opacity-85 filter brightness-95 contrast-105 scale-105 transition-all duration-700"
                     />
                     {/* Simulated subtle breathing overlay gradient */}
-                    <div className="absolute inset-0 bg-radial from-transparent via-slate-950/20 to-slate-950/70" />
+                    <div className="absolute inset-0 bg-gradient-to-b from-slate-950/10 via-transparent to-slate-950/70" />
                   </div>
                 ) : (
                   <div className="text-center p-6 text-slate-500">
@@ -193,7 +202,7 @@ export const TeleconsultationSuite: React.FC = () => {
                     alt="Dr. Sarah Jenkins"
                     className="w-full h-full object-cover"
                   />
-                  <div className="absolute bottom-1 left-1 bg-slate-900/80 px-1 py-0.2 rounded text-[8px] text-white font-bold">
+                  <div className="absolute bottom-1 left-1 bg-slate-900/80 px-1 py-0.5 rounded text-[8px] text-white font-bold">
                     You (RD)
                   </div>
                 </div>
@@ -210,12 +219,12 @@ export const TeleconsultationSuite: React.FC = () => {
 
                     <div className="flex items-center gap-1 text-teal-400 border-l border-slate-700 pl-2">
                       <Activity className="w-3.5 h-3.5" />
-                      <span className="font-bold">98%</span>
+                      <span className="font-bold text-slate-500" title="Not captured in this prototype">—</span>
                       <span className="text-[9px] text-slate-400">SpO2</span>
                     </div>
 
                     <div className="flex items-center gap-1 text-blue-400 border-l border-slate-700 pl-2">
-                      <span className="font-bold">138/84</span>
+                      <span className="font-bold text-slate-500" title="Not captured in this prototype">—</span>
                       <span className="text-[9px] text-slate-400">BP</span>
                     </div>
                   </div>
@@ -224,7 +233,7 @@ export const TeleconsultationSuite: React.FC = () => {
                   <div className="bg-slate-900/85 backdrop-blur-md border border-slate-700/80 rounded-xl px-2.5 py-1.5 text-[11px] text-white flex items-center justify-between shadow-lg">
                     <span className="text-slate-300 font-medium">Meal Compliance:</span>
                     <span
-                      className={`font-extrabold px-1.5 py-0.2 rounded text-[10px] ${
+                      className={`font-extrabold px-1.5 py-0.5 rounded text-[10px] ${
                         complianceScore >= 80
                           ? 'bg-emerald-500/20 text-emerald-300'
                           : 'bg-rose-500/20 text-rose-300'
@@ -287,19 +296,19 @@ export const TeleconsultationSuite: React.FC = () => {
             <div className="p-2.5 rounded-xl bg-white border border-slate-200">
               <span className="text-[10px] font-bold text-slate-500 uppercase block">Wearable Steps</span>
               <span className="font-extrabold text-slate-900">{formatSteps(wearables.steps)}</span>
-              <span className="text-[10px] text-teal-600 block">Synced via HealthKit</span>
+              <span className="text-[10px] text-teal-600 block">Source: {wearables.device}</span>
             </div>
 
             <div className="p-2.5 rounded-xl bg-white border border-slate-200">
               <span className="text-[10px] font-bold text-slate-500 uppercase block">Active Energy Burn</span>
               <span className="font-extrabold text-slate-900">{formatKcal(wearables.activeCalories)}</span>
-              <span className="text-[10px] text-slate-400 block">Goal: 500 kcal</span>
+              <span className="text-[10px] text-slate-400 block">Goal: {formatKcal(wearables.activeCaloriesGoal)}</span>
             </div>
 
             <div className="p-2.5 rounded-xl bg-white border border-slate-200">
               <span className="text-[10px] font-bold text-slate-500 uppercase block">Hydration</span>
               <span className="font-extrabold text-slate-900">{wearables.waterIntakeMl} ml</span>
-              <span className="text-[10px] text-blue-600 block">{Math.round((wearables.waterIntakeMl / wearables.waterGoalMl) * 100)}% of Rx Target</span>
+              <span className="text-[10px] text-blue-600 block">{Math.round((wearables.waterIntakeMl / activePatient.currentPrescription.fluidTargetMl) * 100)}% of Rx Target</span>
             </div>
           </div>
         </div>
@@ -348,25 +357,30 @@ export const TeleconsultationSuite: React.FC = () => {
             </div>
 
             <div className="mt-3 space-y-2 text-xs max-h-48 overflow-y-auto">
-              <div className="p-2.5 rounded-xl bg-rose-50/70 border border-rose-200 text-rose-900">
-                <div className="flex justify-between font-bold">
-                  <span>Spicy Shoyu Ramen with Chashu Pork</span>
-                  <span className="text-rose-700">1,490 mg Na</span>
-                </div>
-                <p className="text-[11px] text-slate-600 mt-1">
-                  Exceeds low-sodium policy meal ceiling (600 mg) by 890 mg. Patient agreed to dilute broths and order half-seasoned ramen bowls.
-                </p>
-              </div>
-
-              <div className="p-2.5 rounded-xl bg-teal-50 border border-teal-200 text-teal-900">
-                <div className="flex justify-between font-bold">
-                  <span>Mediterranean Quinoa Salmon Bowl</span>
-                  <span className="text-teal-700">340 mg Na • 7.5g Fiber</span>
-                </div>
-                <p className="text-[11px] text-slate-600 mt-1">
-                  Full compliance with Diabetic & Renal policies. Positive reinforcement given during call.
-                </p>
-              </div>
+              {flaggedMeals.length === 0 ? (
+                <p className="text-slate-500">No meals with violations or cautions for this patient.</p>
+              ) : (
+                flaggedMeals.map(meal => {
+                  const hasViolation = meal.validationResults.some(r => r.severity === 'VIOLATION');
+                  const detail = meal.validationResults.find(r => r.severity === 'VIOLATION')
+                    ?? meal.validationResults.find(r => r.severity === 'WARNING');
+                  return (
+                    <div
+                      key={meal.id}
+                      className={`p-2.5 rounded-xl border ${
+                        hasViolation ? 'bg-rose-50/70 border-rose-200 text-rose-900' : 'bg-amber-50/70 border-amber-200 text-amber-900'
+                      }`}
+                    >
+                      <div className="flex justify-between font-bold">
+                        <span>{meal.name}</span>
+                        <span>{meal.nutrition.sodium} mg Na</span>
+                      </div>
+                      <p className="text-[11px] text-slate-600 mt-1">{detail?.message}</p>
+                      <p className="text-[10px] text-slate-400 mt-0.5">{meal.timestamp}</p>
+                    </div>
+                  );
+                })
+              )}
             </div>
           </div>
         </div>

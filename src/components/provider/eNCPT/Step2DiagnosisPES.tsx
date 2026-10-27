@@ -1,15 +1,13 @@
 ﻿import React, { useState } from 'react';
 import { useNutriCare } from '../../../context/NutriCareContext';
 import { NCPT_PROBLEM_DICTIONARY, NCPTTerminologyItem } from '../../../mock/defaultCharts';
-import { PESStatement } from '../../../types/clinical';
+import {} from '../../../types/clinical';
 import { 
   Stethoscope, 
   Plus, 
   Trash2, 
   Copy, 
   Check, 
-  Sparkles, 
-  Info,
   BookOpen
 } from 'lucide-react';
 
@@ -48,9 +46,15 @@ export const Step2DiagnosisPES: React.FC = () => {
   };
 
   const copyToClipboard = (statement: string, id: string) => {
-    navigator.clipboard.writeText(statement);
-    setCopiedId(id);
-    setTimeout(() => setCopiedId(null), 2000);
+    navigator.clipboard
+      .writeText(statement)
+      .then(() => {
+        setCopiedId(id);
+        setTimeout(() => setCopiedId(null), 2000);
+      })
+      .catch(() => {
+        // Clipboard can be blocked (insecure context or permission denied); nothing else to do.
+      });
   };
 
   return (
@@ -78,7 +82,7 @@ export const Step2DiagnosisPES: React.FC = () => {
             {chart.diagnosisPES.map((pes, idx) => (
               <div
                 key={pes.id}
-                className="p-4 rounded-xl border border-slate-200 bg-slate-50/60 hover:bg-white transition-all shadow-xs"
+                className="p-4 rounded-xl border border-slate-200 bg-slate-50/60 hover:bg-white transition-all shadow-sm"
               >
                 <div className="flex items-start justify-between">
                   <div className="flex items-center gap-2">

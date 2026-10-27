@@ -1,32 +1,41 @@
-# React + TypeScript + Vite
+# NutriCare OS (prototype)
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+Tele-nutrition workstation prototype: a consumer meal/telemetry portal and a provider
+dashboard (eNCPT charting, telehealth, policy audit). **All data is mock data.** There is no
+backend, authentication, encryption or audit persistence, so this must not be used with real
+patient information or for clinical decisions.
 
-Currently, two official plugins are available:
+## Stack
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+- React 19 + TypeScript + Vite 8
+- Tailwind CSS 3 (PostCSS + Autoprefixer)
+- oxlint for linting
+- lucide-react icons
 
-## React Compiler
+## Scripts
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+| Command | What it does |
+| --- | --- |
+| `npm install` | Install locked dependencies |
+| `npm run dev` | Start the Vite dev server |
+| `npm run build` | Type-check (`tsc -b`) and produce a production build |
+| `npm run lint` | Run oxlint with `.oxlintrc.json` |
+| `npm run preview` | Serve the production build locally |
 
-## Expanding the Oxlint configuration
+## Layout
 
-If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
+- `src/context/NutriCareContext.tsx`: app state. Meals, eNCPT charts, wearables and sync history
+  are stored per patient; the UI reads the active patient's slice.
+- `src/engine/`: clinical policy engine (`policyEngine.ts`, `policyRules.ts`) and the telehealth
+  session state machine (`teleSessionStateMachine.ts`).
+- `src/utils/`: formulas (BMI, Devine IBW, Mifflin-St Jeor, CKD-EPI 2021 eGFR), formatters and
+  local-date helpers.
+- `src/mock/`: seed data.
+- `src/components/`: consumer portal, provider dashboard and eNCPT chart steps.
 
-```json
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
-  "options": {
-    "typeAware": true
-  },
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
-}
-```
+## Known limitations
 
-See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+See the audit report for the full list. Notable open items: no role-based access control,
+patient-scoped policy assignments are not implemented, the Jitsi embed uses the public
+meet.jit.si service (unsuitable for PHI), and the macronutrient targets and CKD staging text
+need clinician review.

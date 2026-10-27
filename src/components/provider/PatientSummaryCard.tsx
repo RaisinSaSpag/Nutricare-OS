@@ -1,15 +1,9 @@
 ﻿import React from 'react';
 import { useNutriCare } from '../../context/NutriCareContext';
 import { 
-  User, 
-  ShieldAlert, 
   Video, 
   FileText, 
-  Heart, 
-  Activity, 
   AlertCircle,
-  Calendar,
-  Clock
 } from 'lucide-react';
 import { formatSteps } from '../../utils/formatters';
 
@@ -22,10 +16,8 @@ export const PatientSummaryCard: React.FC<PatientSummaryCardProps> = ({
   onOpenTelehealth,
   onOpenCharting
 }) => {
-  const { activePatient, policyRules, policyViolationsCount, wearables, teleSessions } = useNutriCare();
+  const { activePatient, policyViolationsCount, policyWarningsCount, wearables } = useNutriCare();
 
-  const activePolicies = policyRules.filter(r => r.isActive);
-  const activeSession = teleSessions.find(s => s.patientId === activePatient.id);
 
   return (
     <div className="bg-white rounded-3xl border border-canvas-border p-5 shadow-soft-sm">
@@ -70,7 +62,7 @@ export const PatientSummaryCard: React.FC<PatientSummaryCardProps> = ({
         <div className="flex items-center gap-2.5 w-full md:w-auto justify-end">
           <button
             onClick={onOpenTelehealth}
-            className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-rose-50 text-rose-700 hover:bg-rose-100 border border-rose-200 text-xs font-bold transition-all shadow-xs"
+            className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-rose-50 text-rose-700 hover:bg-rose-100 border border-rose-200 text-xs font-bold transition-all shadow-sm"
           >
             <Video className="w-3.5 h-3.5 text-rose-600" />
             <span>Launch Tele-Consultation</span>
@@ -132,7 +124,11 @@ export const PatientSummaryCard: React.FC<PatientSummaryCardProps> = ({
           <span className="text-[10px] text-slate-400 uppercase font-bold block">Policy Compliance</span>
           <div className="flex items-baseline gap-1 mt-0.5">
             {policyViolationsCount === 0 ? (
-              <span className="text-xs font-black text-emerald-700">100% Compliant</span>
+              policyWarningsCount === 0 ? (
+                <span className="text-xs font-black text-emerald-700">No flags</span>
+              ) : (
+                <span className="text-xs font-black text-amber-700">{policyWarningsCount} caution{policyWarningsCount > 1 ? 's' : ''}</span>
+              )
             ) : (
               <span className="text-xs font-black text-rose-700 flex items-center gap-1">
                 <AlertCircle className="w-3 h-3" /> {policyViolationsCount} Flags

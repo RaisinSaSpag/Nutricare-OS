@@ -4,7 +4,7 @@ import { EnergyBalance } from './EnergyBalance';
 import { MealTracker } from './MealTracker';
 import { WearableSync } from './WearableSync';
 import { MealTimeline } from './MealTimeline';
-import { Wifi, Battery, Signal, Sparkles, Smartphone, Monitor } from 'lucide-react';
+import { Wifi, Battery, Signal, Smartphone, Monitor } from 'lucide-react';
 
 export const ConsumerPortal: React.FC = () => {
   const { consumerViewport, setConsumerViewport, activePatient } = useNutriCare();
@@ -22,7 +22,7 @@ export const ConsumerPortal: React.FC = () => {
           <button
             onClick={() => setConsumerViewport('mobile')}
             className={`flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-bold transition-all ${
-              isMobileSim ? 'bg-white text-clinical-teal shadow-xs' : 'text-slate-600'
+              isMobileSim ? 'bg-white text-clinical-teal shadow-sm' : 'text-slate-600'
             }`}
           >
             <Smartphone className="w-3.5 h-3.5" />
@@ -31,7 +31,7 @@ export const ConsumerPortal: React.FC = () => {
           <button
             onClick={() => setConsumerViewport('desktop')}
             className={`flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-bold transition-all ${
-              !isMobileSim ? 'bg-white text-clinical-teal shadow-xs' : 'text-slate-600'
+              !isMobileSim ? 'bg-white text-clinical-teal shadow-sm' : 'text-slate-600'
             }`}
           >
             <Monitor className="w-3.5 h-3.5" />
