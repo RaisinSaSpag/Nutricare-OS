@@ -1,7 +1,7 @@
 ﻿import React from 'react';
 import { useNutriCare } from '../../../context/NutriCareContext';
-import { calculateBMI, calculateIBW } from '../../../utils/calculations';
-import { Scale, Activity, Heart, FileText, AlertCircle } from 'lucide-react';
+import { calculateBMI, calculateIBW, calculateEgfrCkdEpi2021 } from '../../../utils/calculations';
+import { Scale, Activity, FileText } from 'lucide-react';
 
 export const Step1Assessment: React.FC = () => {
   const { chart, updateAssessment, activePatient } = useNutriCare();
@@ -26,9 +26,10 @@ export const Step1Assessment: React.FC = () => {
   };
 
   const handleLabChange = (field: keyof typeof labs, val: any) => {
-    updateAssessment({
-      labs: { ...labs, [field]: val }
-    });
+    const nextLabs = { ...labs, [field]: val };
+    // eGFR is calculated from creatinine, age and sex (CKD-EPI 2021), not entered by hand.
+    nextLabs.eGfr = calculateEgfrCkdEpi2021(nextLabs.serumCreatinineMgDl, activePatient.age, activePatient.gender);
+    updateAssessment({ labs: nextLabs });
   };
 
   return (
@@ -46,7 +47,7 @@ export const Step1Assessment: React.FC = () => {
           <div>
             <label className="font-semibold text-slate-700 block mb-1">Height (cm)</label>
             <input
-              type="number"
+              type="number" step="any"
               value={anthropometrics.heightCm}
               onChange={e => handleAnthropometricsChange('heightCm', Number(e.target.value))}
               className="w-full px-3 py-1.5 rounded-xl border border-slate-200 font-bold text-slate-900 focus:border-clinical-teal focus:outline-none"
@@ -95,7 +96,7 @@ export const Step1Assessment: React.FC = () => {
           <div>
             <label className="font-semibold text-slate-700 block mb-1">Waist Circumference (cm)</label>
             <input
-              type="number"
+              type="number" step="any"
               value={anthropometrics.waistCircumferenceCm || 0}
               onChange={e => handleAnthropometricsChange('waistCircumferenceCm', Number(e.target.value))}
               className="w-full px-3 py-1.5 rounded-xl border border-slate-200 font-semibold text-slate-900"
@@ -135,7 +136,7 @@ export const Step1Assessment: React.FC = () => {
           <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-200">
             <label className="text-[11px] font-bold text-slate-700 block">Fasting Glucose (mg/dL)</label>
             <input
-              type="number"
+              type="number" step="any"
               value={labs.fastingGlucoseMgDl}
               onChange={e => handleLabChange('fastingGlucoseMgDl', Number(e.target.value))}
               className="w-full mt-1 px-2 py-1 bg-white rounded-lg border font-bold text-rose-700 border-rose-200"
@@ -145,11 +146,12 @@ export const Step1Assessment: React.FC = () => {
 
           {/* Renal Markers */}
           <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-200">
-            <label className="text-[11px] font-bold text-slate-700 block">eGFR (mL/min/1.73m²)</label>
+            <label className="text-[11px] font-bold text-slate-700 block">eGFR (mL/min/1.73m², calculated)</label>
             <input
-              type="number"
+              type="number" step="any"
               value={labs.eGfr}
-              onChange={e => handleLabChange('eGfr', Number(e.target.value))}
+              readOnly
+              title="Calculated from serum creatinine, age and sex (CKD-EPI 2021)"
               className="w-full mt-1 px-2 py-1 bg-white rounded-lg border font-bold text-amber-700 border-amber-200"
             />
             <span className="text-[10px] text-slate-400">CKD 3a: 45 - 59</span>
@@ -183,7 +185,7 @@ export const Step1Assessment: React.FC = () => {
           <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-200">
             <label className="text-[11px] font-bold text-slate-700 block">Serum Sodium (mEq/L)</label>
             <input
-              type="number"
+              type="number" step="any"
               value={labs.serumSodiumMeqL}
               onChange={e => handleLabChange('serumSodiumMeqL', Number(e.target.value))}
               className="w-full mt-1 px-2 py-1 bg-white rounded-lg border font-semibold text-slate-900 border-slate-200"
@@ -195,7 +197,7 @@ export const Step1Assessment: React.FC = () => {
           <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-200">
             <label className="text-[11px] font-bold text-slate-700 block">LDL-C (mg/dL)</label>
             <input
-              type="number"
+              type="number" step="any"
               value={labs.ldlCholesterolMgDl}
               onChange={e => handleLabChange('ldlCholesterolMgDl', Number(e.target.value))}
               className="w-full mt-1 px-2 py-1 bg-white rounded-lg border font-semibold text-slate-900 border-slate-200"
@@ -206,7 +208,7 @@ export const Step1Assessment: React.FC = () => {
           <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-200">
             <label className="text-[11px] font-bold text-slate-700 block">Triglycerides (mg/dL)</label>
             <input
-              type="number"
+              type="number" step="any"
               value={labs.triglyceridesMgDl}
               onChange={e => handleLabChange('triglyceridesMgDl', Number(e.target.value))}
               className="w-full mt-1 px-2 py-1 bg-white rounded-lg border font-semibold text-slate-900 border-slate-200"

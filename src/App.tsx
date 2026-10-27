@@ -3,7 +3,8 @@ import { NutriCareProvider, useNutriCare } from './context/NutriCareContext';
 import { Header } from './components/common/Header';
 import { ConsumerPortal } from './components/consumer/ConsumerPortal';
 import { ProviderDashboard } from './components/provider/ProviderDashboard';
-import { Activity, ShieldCheck, HeartPulse } from 'lucide-react';
+import { ErrorBoundary } from './components/common/ErrorBoundary';
+import { ShieldCheck, HeartPulse } from 'lucide-react';
 
 const NutriCareMainApp: React.FC = () => {
   const { currentPortal } = useNutriCare();
@@ -15,11 +16,13 @@ const NutriCareMainApp: React.FC = () => {
 
       {/* Main Dual-Portal View Container */}
       <main className="flex-1 pb-12">
-        {currentPortal === 'consumer' ? (
-          <ConsumerPortal />
-        ) : (
-          <ProviderDashboard />
-        )}
+        <ErrorBoundary label={currentPortal === 'consumer' ? 'consumer portal' : 'provider dashboard'}>
+          {currentPortal === 'consumer' ? (
+            <ConsumerPortal />
+          ) : (
+            <ProviderDashboard />
+          )}
+        </ErrorBoundary>
       </main>
 
       {/* Clinical Tech & Bio-Vitality Footer */}
@@ -32,11 +35,11 @@ const NutriCareMainApp: React.FC = () => {
           </div>
 
           <div className="flex items-center gap-4 text-[11px]">
-            <span className="flex items-center gap-1 text-emerald-700 font-semibold">
-              <ShieldCheck className="w-3.5 h-3.5" /> HIPAA & eNCPT Compliant Architecture
+            <span className="flex items-center gap-1 text-amber-700 font-semibold">
+              <ShieldCheck className="w-3.5 h-3.5" /> Prototype: mock data only, not validated for clinical use
             </span>
             <span>•</span>
-            <span>Version 2.4 (Clinical Release)</span>
+            <span>Version 2.4 (Prototype)</span>
           </div>
         </div>
       </footer>

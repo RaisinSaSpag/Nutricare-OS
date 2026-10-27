@@ -1,9 +1,14 @@
-import { StrictMode } from 'react'
+﻿import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import './index.css'
 import App from './App'
 
-createRoot(document.getElementById('root')!).render(
+const rootElement = document.getElementById('root');
+if (!rootElement) {
+  throw new Error('NutriCare OS: missing #root element in index.html');
+}
+
+createRoot(rootElement).render(
   <StrictMode>
     <App />
   </StrictMode>,

@@ -1,6 +1,6 @@
 ﻿import React, { useState } from 'react';
 import { useNutriCare } from '../../../context/NutriCareContext';
-import { CheckSquare, Calendar, Plus, Trash2, LineChart, Award } from 'lucide-react';
+import { CheckSquare, Plus, Trash2, LineChart, Award } from 'lucide-react';
 
 export const Step4Monitoring: React.FC = () => {
   const { chart, updateMonitoring } = useNutriCare();
@@ -69,7 +69,7 @@ export const Step4Monitoring: React.FC = () => {
               Re-assessment Horizon (Weeks)
             </label>
             <input
-              type="number"
+              type="number" step="any"
               value={monitoring.followUpTimelineWeeks}
               onChange={e => handleFieldChange('followUpTimelineWeeks', Number(e.target.value))}
               className="w-full px-3 py-1.5 rounded-xl border border-slate-200 font-semibold"

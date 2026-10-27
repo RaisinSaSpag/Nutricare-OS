@@ -1,4 +1,4 @@
-﻿import React, { useState } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { useNutriCare } from '../../../context/NutriCareContext';
 import { 
   Printer, 
@@ -7,10 +7,8 @@ import {
   Check, 
   X, 
   FileText, 
-  Activity, 
-  ShieldCheck 
 } from 'lucide-react';
-import { formatKcal, formatGrams, formatMg } from '../../../utils/formatters';
+import { formatKcal, formatMg } from '../../../utils/formatters';
 
 interface ClinicalExportModalProps {
   isOpen: boolean;
@@ -20,6 +18,16 @@ interface ClinicalExportModalProps {
 export const ClinicalExportModal: React.FC<ClinicalExportModalProps> = ({ isOpen, onClose }) => {
   const { chart, activePatient, policyRules } = useNutriCare();
   const [copied, setCopied] = useState(false);
+
+  // Escape closes the dialog while it is open.
+  useEffect(() => {
+    if (!isOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [isOpen, onClose]);
 
   if (!isOpen) return null;
 
@@ -34,7 +42,6 @@ export const ClinicalExportModal: React.FC<ClinicalExportModalProps> = ({ isOpen
       id: activePatient.id,
       mrn: activePatient.mrn,
       name: activePatient.name,
-      dob: activePatient.dob,
       age: activePatient.age,
       gender: activePatient.gender,
       primaryDiagnosis: activePatient.primaryDiagnosis,
@@ -50,16 +57,22 @@ export const ClinicalExportModal: React.FC<ClinicalExportModalProps> = ({ isOpen
   };
 
   const handleCopyJSON = () => {
-    navigator.clipboard.writeText(JSON.stringify(jsonExportData, null, 2));
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    navigator.clipboard
+      .writeText(JSON.stringify(jsonExportData, null, 2))
+      .then(() => {
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      })
+      .catch(() => {
+        // Clipboard unavailable; the download and print options still work.
+      });
   };
 
   const handleDownloadJSON = () => {
     const dataStr = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(jsonExportData, null, 2));
     const downloadAnchor = document.createElement('a');
     downloadAnchor.setAttribute('href', dataStr);
-    downloadAnchor.setAttribute('download', `eNCPT_Chart_${activePatient.mrn}_${new Date().toISOString().slice(0, 10)}.json`);
+    downloadAnchor.setAttribute('download', `eNCPT_Chart_${activePatient.id}_${new Date().toISOString().slice(0, 10)}.json`);
     document.body.appendChild(downloadAnchor);
     downloadAnchor.click();
     downloadAnchor.remove();
@@ -70,7 +83,7 @@ export const ClinicalExportModal: React.FC<ClinicalExportModalProps> = ({ isOpen
   };
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+    <div role="dialog" aria-modal="true" aria-labelledby="export-dialog-title" className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 flex items-center justify-center p-4">
       <div className="bg-white rounded-3xl max-w-4xl w-full max-h-[90vh] flex flex-col shadow-2xl border border-slate-200 overflow-hidden">
         {/* Modal Top Bar (Hidden on print) */}
         <div className="px-6 py-4 bg-slate-900 text-white flex items-center justify-between no-print shrink-0">
@@ -79,7 +92,7 @@ export const ClinicalExportModal: React.FC<ClinicalExportModalProps> = ({ isOpen
               <FileText className="w-4 h-4" />
             </div>
             <div>
-              <h3 className="text-sm font-bold">Synthesized Clinical Chart Summary (eNCPT)</h3>
+              <h3 id="export-dialog-title" className="text-sm font-bold">Synthesized Clinical Chart Summary (eNCPT)</h3>
               <p className="text-[11px] text-slate-400">Ready for Electronic Medical Record (EMR) integration</p>
             </div>
           </div>
@@ -111,6 +124,7 @@ export const ClinicalExportModal: React.FC<ClinicalExportModalProps> = ({ isOpen
 
             <button
               onClick={onClose}
+              aria-label="Close export dialog"
               className="p-1.5 text-slate-400 hover:text-white rounded-lg transition-colors ml-2"
             >
               <X className="w-5 h-5" />
@@ -277,10 +291,10 @@ export const ClinicalExportModal: React.FC<ClinicalExportModalProps> = ({ isOpen
           {/* Clinician Signature Line */}
           <div className="pt-6 border-t border-slate-200 flex items-center justify-between text-[11px] text-slate-500">
             <div>
-              Electronically verified by: <strong>{chart.dietitianName}</strong>
+              Unsigned draft. Dietitian of record: <strong>{chart.dietitianName}</strong>
             </div>
             <div>
-              Document Hash: <code className="font-mono text-[10px] text-slate-600">eNCPT-SHA256:7fa8b9c1</code>
+              Not a signed record (prototype export)
             </div>
           </div>
         </div>

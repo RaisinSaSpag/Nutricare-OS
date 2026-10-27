@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import { useNutriCare } from '../../context/NutriCareContext';
 import { WearableDevice } from '../../types/wearables';
 import { 
@@ -11,7 +11,6 @@ import {
   RefreshCw, 
   CheckCircle2,
   Clock,
-  Sparkles
 } from 'lucide-react';
 import { formatSteps, formatKcal } from '../../utils/formatters';
 
@@ -184,7 +183,7 @@ export const WearableSync: React.FC = () => {
         </button>
         <span className="text-[10px] text-emerald-600 font-semibold flex items-center gap-1">
           <CheckCircle2 className="w-3 h-3" />
-          <span>Biometrics synced with Dietitian</span>
+          <span>{wearables.syncStatus === 'synced' ? 'Synced this session' : 'Not synced this session'}</span>
         </span>
       </div>
 
@@ -193,7 +192,7 @@ export const WearableSync: React.FC = () => {
           <div className="text-teal-400 font-bold">// Apple HealthKit / Google Fit API Sync History</div>
           {syncHistory.map(entry => (
             <div key={entry.id} className="border-b border-slate-800 pb-1">
-              <span className="text-slate-400">[{entry.timestamp}]</span> {entry.device}: {entry.steps} steps, {entry.activeCalories} kcal, {entry.waterIntakeMl} mL &rarr; HTTP 200 OK
+              <span className="text-slate-400">[{entry.timestamp}]</span> {entry.device}: {entry.steps} steps, {entry.activeCalories} kcal, {entry.waterIntakeMl} mL &rarr; {entry.status}
             </div>
           ))}
         </div>

@@ -1,4 +1,5 @@
 ﻿import { Patient } from '../types/clinical';
+import { calculateIBW, calculateEgfrCkdEpi2021 } from '../utils/calculations';
 
 export const DEFAULT_PATIENTS: Patient[] = [
   {
@@ -21,14 +22,14 @@ export const DEFAULT_PATIENTS: Patient[] = [
       weightKg: 74.2,
       bmi: 27.3,
       bmiClassification: 'Overweight (Pre-obesity)',
-      idealBodyWeightKg: 56.7,
+      idealBodyWeightKg: calculateIBW(165, 'Female'),
       weightChange30DaysPercent: -1.2,
       waistCircumferenceCm: 86
     },
     labs: {
       hba1cPercent: 7.8,
       fastingGlucoseMgDl: 156,
-      eGfr: 52,
+      eGfr: calculateEgfrCkdEpi2021(1.35, 62, 'Female'),
       bunMgDl: 26,
       serumCreatinineMgDl: 1.35,
       serumPotassiumMeqL: 4.8,
@@ -77,7 +78,7 @@ export const DEFAULT_PATIENTS: Patient[] = [
       weightKg: 104.5,
       bmi: 31.5,
       bmiClassification: 'Obesity Class I',
-      idealBodyWeightKg: 78.0,
+      idealBodyWeightKg: calculateIBW(182, 'Male'),
       weightChange30DaysPercent: -0.5,
       waistCircumferenceCm: 106
     },

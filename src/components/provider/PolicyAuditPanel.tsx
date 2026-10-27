@@ -1,11 +1,11 @@
 ﻿import React from 'react';
 import { useNutriCare } from '../../context/NutriCareContext';
 import { PolicyAlertBadge } from '../common/PolicyAlertBadge';
-import { ShieldCheck, ShieldAlert, AlertTriangle, CheckCircle2, Clock, Sparkles } from 'lucide-react';
-import { formatMg, formatGrams, formatKcal } from '../../utils/formatters';
+import { ShieldCheck, ShieldAlert, Clock } from 'lucide-react';
+import { formatKcal, formatGrams, formatMg } from '../../utils/formatters';
 
 export const PolicyAuditPanel: React.FC = () => {
-  const { policyRules, togglePolicyRule, meals, dailyTotals, policyViolationsCount } = useNutriCare();
+  const { policyRules, togglePolicyRule, meals } = useNutriCare();
 
   const activeRules = policyRules.filter(r => r.isActive);
 
@@ -42,7 +42,7 @@ export const PolicyAuditPanel: React.FC = () => {
                 <div>
                   <div className="flex items-center gap-2">
                     <span className="font-extrabold text-slate-900">{rule.name}</span>
-                    <span className="font-mono text-[10px] px-1.5 py-0.2 rounded bg-slate-200 font-bold text-slate-700">
+                    <span className="font-mono text-[10px] px-1.5 py-0.5 rounded bg-slate-200 font-bold text-slate-700">
                       {rule.code}
                     </span>
                   </div>
@@ -53,6 +53,9 @@ export const PolicyAuditPanel: React.FC = () => {
 
                 <button
                   type="button"
+                  role="switch"
+                  aria-checked={rule.isActive}
+                  aria-label={`Enable ${rule.name}`}
                   onClick={() => togglePolicyRule(rule.id)}
                   className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
                     rule.isActive ? 'bg-clinical-teal' : 'bg-slate-300'
@@ -68,27 +71,27 @@ export const PolicyAuditPanel: React.FC = () => {
 
               {/* Thresholds summary */}
               <div className="mt-3 pt-2 border-t border-slate-200/60 flex flex-wrap gap-2 text-[10px] font-mono font-semibold text-slate-700">
-                {rule.mealMaxSodium && (
+                {rule.mealMaxSodium !== undefined && (
                   <span className="bg-white px-2 py-0.5 rounded border border-slate-200">
                     Max Sodium/Meal: &lt;= {rule.mealMaxSodium} mg
                   </span>
                 )}
-                {rule.dailyMaxSodium && (
+                {rule.dailyMaxSodium !== undefined && (
                   <span className="bg-white px-2 py-0.5 rounded border border-slate-200">
                     Daily Sodium Ceiling: &lt;= {rule.dailyMaxSodium} mg
                   </span>
                 )}
-                {rule.mealMinCarbs && (
+                {rule.mealMinCarbs !== undefined && (
                   <span className="bg-white px-2 py-0.5 rounded border border-slate-200">
                     Carb Window: {rule.mealMinCarbs}g - {rule.mealMaxCarbs}g
                   </span>
                 )}
-                {rule.mealMinFiber && (
+                {rule.mealMinFiber !== undefined && (
                   <span className="bg-white px-2 py-0.5 rounded border border-slate-200">
                     Min Fiber: &gt;= {rule.mealMinFiber}g
                   </span>
                 )}
-                {rule.mealMaxPotassium && (
+                {rule.mealMaxPotassium !== undefined && (
                   <span className="bg-white px-2 py-0.5 rounded border border-slate-200">
                     Max Potassium: &lt;= {rule.mealMaxPotassium} mg
                   </span>
@@ -120,19 +123,19 @@ export const PolicyAuditPanel: React.FC = () => {
           {meals.map(meal => (
             <div
               key={meal.id}
-              className="p-4 rounded-xl border border-slate-200 bg-white hover:border-slate-300 transition-all shadow-xs"
+              className="p-4 rounded-xl border border-slate-200 bg-white hover:border-slate-300 transition-all shadow-sm"
             >
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 pb-2 border-b border-slate-100">
                 <div className="flex items-center gap-3">
                   <img
                     src={meal.imageUrl}
                     alt={meal.name}
-                    className="w-12 h-12 rounded-xl object-cover border border-slate-200 shadow-xs"
+                    className="w-12 h-12 rounded-xl object-cover border border-slate-200 shadow-sm"
                   />
                   <div>
                     <div className="flex items-center gap-2">
                       <h4 className="font-extrabold text-slate-900 text-xs">{meal.name}</h4>
-                      <span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-slate-100 text-slate-700">
+                      <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-slate-100 text-slate-700">
                         {meal.slot}
                       </span>
                     </div>
@@ -149,20 +152,20 @@ export const PolicyAuditPanel: React.FC = () => {
                     {formatKcal(meal.nutrition.calories)}
                   </span>
                   <span className="px-2 py-0.5 rounded bg-amber-50 font-bold text-amber-800 border border-amber-200">
-                    {meal.nutrition.carbs}g Carb
+                    {formatGrams(meal.nutrition.carbs)} Carb
                   </span>
                   <span className="px-2 py-0.5 rounded bg-teal-50 font-bold text-teal-800 border border-teal-200">
-                    {meal.nutrition.protein}g Pro
+                    {formatGrams(meal.nutrition.protein)} Pro
                   </span>
                   <span className={`px-2 py-0.5 rounded font-bold border ${
                     meal.nutrition.sodium > 600
                       ? 'bg-rose-100 text-rose-800 border-rose-300'
                       : 'bg-slate-100 text-slate-700 border-slate-200'
                   }`}>
-                    {meal.nutrition.sodium}mg Na
+                    {formatMg(meal.nutrition.sodium)} Na
                   </span>
                   <span className="px-2 py-0.5 rounded bg-emerald-50 font-bold text-emerald-800 border border-emerald-200">
-                    {meal.nutrition.fiber}g Fiber
+                    {formatGrams(meal.nutrition.fiber)} Fiber
                   </span>
                 </div>
               </div>

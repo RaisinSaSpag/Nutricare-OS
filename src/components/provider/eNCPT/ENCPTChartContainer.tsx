@@ -6,17 +6,15 @@ import { Step3Intervention } from './Step3Intervention';
 import { Step4Monitoring } from './Step4Monitoring';
 import { ClinicalExportModal } from './ClinicalExportModal';
 import { 
-  FileCheck2, 
   Stethoscope, 
   Pill, 
   LineChart, 
   FileDown, 
-  CheckCircle, 
   FileText
 } from 'lucide-react';
 
 export const ENCPTChartContainer: React.FC = () => {
-  const { chart, activePatient, policyRules } = useNutriCare();
+  const { chart, policyRules } = useNutriCare();
   const [activeStep, setActiveStep] = useState<1 | 2 | 3 | 4>(1);
   const [isExportOpen, setIsExportOpen] = useState(false);
 
@@ -59,7 +57,7 @@ export const ENCPTChartContainer: React.FC = () => {
           {steps.map(step => (
             <button
               key={step.num}
-              onClick={() => setActiveStep(step.num as any)}
+              onClick={() => setActiveStep(step.num as 1 | 2 | 3 | 4)}
               className={`flex items-center gap-2.5 p-2 rounded-xl text-left transition-all ${
                 activeStep === step.num
                   ? 'bg-clinical-navy text-white shadow-soft-sm'
@@ -78,7 +76,7 @@ export const ENCPTChartContainer: React.FC = () => {
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-1.5">
                   <span className="text-xs font-black truncate">{step.title}</span>
-                  <span className={`text-[9px] px-1 py-0.2 rounded font-mono font-bold ${
+                  <span className={`text-[9px] px-1 py-0.5 rounded font-mono font-bold ${
                     activeStep === step.num ? 'bg-teal-900/60 text-teal-300' : 'bg-slate-200 text-slate-600'
                   }`}>
                     {step.badge}

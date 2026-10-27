@@ -15,6 +15,24 @@ export function validateMealPlan(
   activeRules: PolicyRule[],
   dailyContext?: DailyContext
 ): PolicyValidationResult[] {
+  // Missing or non-numeric nutrient data must not read as COMPLIANT (NaN fails every comparison).
+  const requiredFields: (keyof NutritionalValues)[] = ['calories', 'carbs', 'protein', 'fat', 'sodium', 'fiber', 'potassium'];
+  const missing = requiredFields.filter(k => !Number.isFinite(mealData[k]));
+  if (missing.length > 0) {
+    return [{
+      ruleId: 'data-integrity',
+      ruleName: 'Nutrient data integrity',
+      passed: false,
+      severity: 'WARNING',
+      metric: 'Missing nutrient values',
+      actualValue: missing.length,
+      threshold: 0,
+      unit: 'fields',
+      message: `Policies cannot be evaluated: ${missing.join(', ')} missing or non-numeric.`,
+      correctiveGuidance: 'Enter every nutrient value before relying on this meal\'s compliance status.'
+    }];
+  }
+
   const results: PolicyValidationResult[] = [];
 
   for (const rule of activeRules) {
@@ -72,6 +90,54 @@ export function validateMealPlan(
             : `Keep remaining meals low in salt to stay within guideline bounds.`
         });
       }
+    }
+
+    // 2b. Check Daily Cumulative Potassium (rule field existed but had no handler)
+    if (rule.dailyMaxPotassium !== undefined && dailyContext) {
+      const projectedDailyPotassium = dailyContext.accumulatedPotassium + mealData.potassium;
+      const isDailyViolation = projectedDailyPotassium > rule.dailyMaxPotassium;
+      const isDailyWarning = !isDailyViolation && projectedDailyPotassium > rule.dailyMaxPotassium * 0.85;
+
+      if (isDailyViolation || isDailyWarning) {
+        results.push({
+          ruleId: `${rule.id}-daily-potassium`,
+          ruleName: `${rule.name}: Cumulative Daily Potassium`,
+          passed: !isDailyViolation,
+          severity: isDailyViolation ? 'VIOLATION' : 'WARNING',
+          metric: 'Daily Potassium Total',
+          actualValue: projectedDailyPotassium,
+          threshold: rule.dailyMaxPotassium,
+          unit: 'mg',
+          message: isDailyViolation
+            ? `Adding this meal drives projected daily potassium to ${projectedDailyPotassium} mg, breaching the ${rule.dailyMaxPotassium} mg daily cap.`
+            : `Projected daily potassium is now ${projectedDailyPotassium} mg (approaching ${rule.dailyMaxPotassium} mg cap).`,
+          correctiveGuidance: isDailyViolation
+            ? `Corrective Action: Keep the remaining meals today low in potassium (under ${Math.max(0, rule.dailyMaxPotassium - dailyContext.accumulatedPotassium)} mg).`
+            : `Monitor potassium in remaining meals for the day.`
+        });
+      }
+    }
+
+    // 2c. Check Meal Fat Share of Calories (rule field existed but had no handler)
+    if (rule.mealMaxFatPercent !== undefined && mealData.calories > 0) {
+      const fatPercent = (mealData.fat * 9 / mealData.calories) * 100;
+      const isViolation = fatPercent > rule.mealMaxFatPercent;
+      results.push({
+        ruleId: rule.id,
+        ruleName: `${rule.name}: Meal Fat Share`,
+        passed: !isViolation,
+        severity: isViolation ? 'VIOLATION' : 'COMPLIANT',
+        metric: 'Fat (% of meal kcal)',
+        actualValue: Math.round(fatPercent),
+        threshold: rule.mealMaxFatPercent,
+        unit: '%',
+        message: isViolation
+          ? `Fat supplies ${Math.round(fatPercent)}% of this meal's calories, above the ${rule.mealMaxFatPercent}% limit.`
+          : `Fat supplies ${Math.round(fatPercent)}% of this meal's calories (limit ${rule.mealMaxFatPercent}%).`,
+        correctiveGuidance: isViolation
+          ? 'Corrective Action: Reduce added oils, fried components, or fatty cuts of meat.'
+          : 'Compliant with the fat-share limit.'
+      });
     }
 
     // 3. Check Meal Carbohydrate Bounds (Diabetic / Renal)

@@ -1,4 +1,4 @@
-﻿import React, { useState, useMemo } from 'react';
+﻿import React, { useState, useMemo, useRef } from 'react';
 import { useNutriCare } from '../../context/NutriCareContext';
 import { MealSlot, NutritionalValues } from '../../types/meals';
 import { PRESET_MEALS, PresetMealTemplate } from '../../mock/defaultMeals';
@@ -7,16 +7,44 @@ import {
   Camera, 
   Upload, 
   Sparkles, 
-  Check, 
   AlertTriangle, 
   Plus, 
-  Utensils, 
   X,
-  FileImage,
-  Flame,
   CheckCircle2,
   XCircle
 } from 'lucide-react';
+
+const MAX_PHOTO_BYTES = 5 * 1024 * 1024;
+
+const EMPTY_NUTRITION: NutritionalValues = {
+  calories: 450,
+  carbs: 50,
+  protein: 30,
+  fat: 14,
+  sodium: 420,
+  fiber: 6,
+  potassium: 550,
+  water: 250
+};
+
+/** Upper bound per field. Keeps typos (e.g. an extra zero) from silently distorting totals. */
+const NUMERIC_LIMITS: Record<keyof NutritionalValues, number> = {
+  calories: 5000,
+  carbs: 1000,
+  protein: 500,
+  fat: 500,
+  sodium: 10000,
+  fiber: 200,
+  potassium: 10000,
+  water: 10000
+};
+
+/** Non-numeric or negative input becomes 0; values above the field limit are clamped. */
+function parseBounded(raw: string, max: number): number {
+  const n = Number(raw);
+  if (!Number.isFinite(n) || n < 0) return 0;
+  return Math.min(n, max);
+}
 
 export const MealTracker: React.FC = () => {
   const { addMeal, policyRules, dailyTotals } = useNutriCare();
@@ -26,18 +54,16 @@ export const MealTracker: React.FC = () => {
   const [mealSlot, setMealSlot] = useState<MealSlot>('Lunch');
   const [imageUrl, setImageUrl] = useState<string>('');
   const [isDragOver, setIsDragOver] = useState(false);
+  const [source, setSource] = useState<'manual' | 'photo_scan' | 'preset'>('manual');
+  const [fileError, setFileError] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Nutritional values state
-  const [nutrition, setNutrition] = useState<NutritionalValues>({
-    calories: 450,
-    carbs: 50,
-    protein: 30,
-    fat: 14,
-    sodium: 420,
-    fiber: 6,
-    potassium: 550,
-    water: 250
-  });
+  const [nutrition, setNutrition] = useState<NutritionalValues>(EMPTY_NUTRITION);
+
+  const setField = (key: keyof NutritionalValues, raw: string) => {
+    setNutrition(prev => ({ ...prev, [key]: parseBounded(raw, NUMERIC_LIMITS[key]) }));
+  };
 
   // Real-time policy pre-validation
   const liveValidation = useMemo(() => {
@@ -58,69 +84,70 @@ export const MealTracker: React.FC = () => {
     setMealSlot(preset.slot);
     setImageUrl(preset.imageUrl);
     setNutrition({ ...preset.nutrition });
+    setSource('preset');
+    setFileError(null);
   };
 
-  // Handle File Drag & Drop
+  // Accepts only images under the size limit; the photo is kept for the record, nutrient values stay manual.
+  const loadPhotoFile = (file: File | undefined) => {
+    if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      setFileError('Please choose an image file (PNG, JPG or WEBP).');
+      return;
+    }
+    if (file.size > MAX_PHOTO_BYTES) {
+      setFileError('That photo is larger than 5 MB. Choose a smaller image.');
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = event => {
+      const result = event.target?.result;
+      if (typeof result === 'string') {
+        setImageUrl(result);
+        setSource('manual');
+        setFileError(null);
+        if (!mealName) {
+          setMealName(file.name.replace(/\.[^/.]+$/, '').replace(/[-_]/g, ' '));
+        }
+      }
+    };
+    reader.onerror = () => setFileError('Could not read that file. Try another photo.');
+    reader.readAsDataURL(file);
+  };
+
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
     setIsDragOver(false);
-    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-      const file = e.dataTransfer.files[0];
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        if (event.target?.result) {
-          setImageUrl(event.target.result as string);
-          if (!mealName) {
-            setMealName(file.name.replace(/\.[^/.]+$/, "").replace(/[-_]/g, ' '));
-          }
-        }
-      };
-      reader.readAsDataURL(file);
-    }
+    loadPhotoFile(e.dataTransfer.files?.[0]);
   };
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      const file = e.target.files[0];
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        if (event.target?.result) {
-          setImageUrl(event.target.result as string);
-          if (!mealName) {
-            setMealName(file.name.replace(/\.[^/.]+$/, "").replace(/[-_]/g, ' '));
-          }
-        }
-      };
-      reader.readAsDataURL(file);
-    }
+    loadPhotoFile(e.target.files?.[0]);
+  };
+
+  const resetForm = () => {
+    setMealName('');
+    setImageUrl('');
+    setSource('manual');
+    setFileError(null);
+    setNutrition(EMPTY_NUTRITION);
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!mealName.trim()) return;
 
-    addMeal({
+    const stored = addMeal({
       name: mealName.trim(),
       slot: mealSlot,
       nutrition,
-      imageUrl: imageUrl || 'https://images.unsplash.com/photo-1498837167922-ddd27525d352?auto=format&fit=crop&w=600&q=80',
-      source: imageUrl ? 'photo_scan' : 'manual'
+      imageUrl: imageUrl || undefined,
+      source
     });
+    if (!stored) return;
 
-    // Reset & close
     setIsLoggingOpen(false);
-    setMealName('');
-    setImageUrl('');
-    setNutrition({
-      calories: 450,
-      carbs: 50,
-      protein: 30,
-      fat: 14,
-      sodium: 420,
-      fiber: 6,
-      potassium: 550,
-      water: 250
-    });
+    resetForm();
   };
 
   return (
@@ -178,7 +205,7 @@ export const MealTracker: React.FC = () => {
                       {preset.name}
                     </span>
                     <span
-                      className={`text-[9px] font-semibold px-1 py-0.2 rounded inline-block ${
+                      className={`text-[9px] font-semibold px-1 py-0.5 rounded inline-block ${
                         preset.isViolationDemo
                           ? 'bg-rose-100 text-rose-700'
                           : 'bg-emerald-100 text-emerald-800'
@@ -249,14 +276,14 @@ export const MealTracker: React.FC = () => {
                   />
                   <div className="flex-1">
                     <span className="text-xs font-bold text-slate-800 flex items-center gap-1 text-emerald-600">
-                      <CheckCircle2 className="w-4 h-4" /> Photo Attached & Scanned
+                      <CheckCircle2 className="w-4 h-4" /> Photo attached
                     </span>
                     <p className="text-[11px] text-slate-500 mt-0.5">
-                      Macronutrients extracted from computer vision simulation.
+                      Nutrient values below are entered manually; the photo is kept with the log.
                     </p>
                     <button
                       type="button"
-                      onClick={() => setImageUrl('')}
+                      onClick={() => { setImageUrl(''); setSource('manual'); }}
                       className="text-[11px] text-rose-600 font-semibold hover:underline mt-1.5"
                     >
                       Remove Photo
@@ -268,15 +295,21 @@ export const MealTracker: React.FC = () => {
                   <Upload className="w-8 h-8 mx-auto text-slate-400 mb-1" />
                   <p className="text-xs font-semibold text-slate-700">
                     Drag and drop your meal photo here, or{' '}
-                    <label className="text-clinical-teal cursor-pointer hover:underline font-bold">
-                      browse
+                    <button
+                        type="button"
+                        onClick={() => fileInputRef.current?.click()}
+                        className="text-clinical-teal hover:underline font-bold"
+                      >
+                        browse
+                      </button>
                       <input
+                        ref={fileInputRef}
                         type="file"
                         accept="image/*"
                         onChange={handleFileSelect}
-                        className="hidden"
+                        className="sr-only"
+                        aria-label="Upload meal photo"
                       />
-                    </label>
                   </p>
                   <p className="text-[10px] text-slate-400 mt-1">
                     Supports PNG, JPG, WEBP. Or select one of the clinical presets above.
@@ -285,6 +318,10 @@ export const MealTracker: React.FC = () => {
               )}
             </div>
           </div>
+
+          {fileError && (
+            <p role="alert" className="text-[11px] text-rose-700 font-semibold">{fileError}</p>
+          )}
 
           {/* Nutrient Input Sliders & Number Fields */}
           <div className="bg-slate-50 rounded-xl p-3 border border-slate-200">
@@ -295,10 +332,10 @@ export const MealTracker: React.FC = () => {
               <div>
                 <label className="text-[11px] font-medium text-slate-600 block">Calories (kcal)</label>
                 <input
-                  type="number"
+                  type="number" step="any"
                   min="0"
                   value={nutrition.calories}
-                  onChange={e => setNutrition({ ...nutrition, calories: Number(e.target.value) })}
+                  onChange={e => setField('calories', e.target.value)}
                   className="w-full px-2 py-1 rounded-lg border border-slate-200 font-semibold"
                 />
               </div>
@@ -306,10 +343,10 @@ export const MealTracker: React.FC = () => {
               <div>
                 <label className="text-[11px] font-medium text-slate-600 block">Carbohydrates (g)</label>
                 <input
-                  type="number"
+                  type="number" step="any"
                   min="0"
                   value={nutrition.carbs}
-                  onChange={e => setNutrition({ ...nutrition, carbs: Number(e.target.value) })}
+                  onChange={e => setField('carbs', e.target.value)}
                   className="w-full px-2 py-1 rounded-lg border border-slate-200 font-semibold"
                 />
               </div>
@@ -317,10 +354,10 @@ export const MealTracker: React.FC = () => {
               <div>
                 <label className="text-[11px] font-medium text-slate-600 block">Protein (g)</label>
                 <input
-                  type="number"
+                  type="number" step="any"
                   min="0"
                   value={nutrition.protein}
-                  onChange={e => setNutrition({ ...nutrition, protein: Number(e.target.value) })}
+                  onChange={e => setField('protein', e.target.value)}
                   className="w-full px-2 py-1 rounded-lg border border-slate-200 font-semibold"
                 />
               </div>
@@ -328,10 +365,10 @@ export const MealTracker: React.FC = () => {
               <div>
                 <label className="text-[11px] font-medium text-slate-600 block">Fat (g)</label>
                 <input
-                  type="number"
+                  type="number" step="any"
                   min="0"
                   value={nutrition.fat}
-                  onChange={e => setNutrition({ ...nutrition, fat: Number(e.target.value) })}
+                  onChange={e => setField('fat', e.target.value)}
                   className="w-full px-2 py-1 rounded-lg border border-slate-200 font-semibold"
                 />
               </div>
@@ -342,10 +379,10 @@ export const MealTracker: React.FC = () => {
                   Sodium (mg) *Policy Guard
                 </label>
                 <input
-                  type="number"
+                  type="number" step="any"
                   min="0"
                   value={nutrition.sodium}
-                  onChange={e => setNutrition({ ...nutrition, sodium: Number(e.target.value) })}
+                  onChange={e => setField('sodium', e.target.value)}
                   className="w-full px-2 py-1 rounded-lg border border-rose-300 font-bold bg-white text-rose-900 focus:ring-rose-500"
                 />
               </div>
@@ -355,10 +392,10 @@ export const MealTracker: React.FC = () => {
                   Fiber (g) *Clinical Target
                 </label>
                 <input
-                  type="number"
+                  type="number" step="any"
                   min="0"
                   value={nutrition.fiber}
-                  onChange={e => setNutrition({ ...nutrition, fiber: Number(e.target.value) })}
+                  onChange={e => setField('fiber', e.target.value)}
                   className="w-full px-2 py-1 rounded-lg border border-emerald-300 font-bold bg-white text-emerald-900"
                 />
               </div>
@@ -368,10 +405,10 @@ export const MealTracker: React.FC = () => {
                   Potassium (mg) *Renal Guard
                 </label>
                 <input
-                  type="number"
+                  type="number" step="any"
                   min="0"
                   value={nutrition.potassium}
-                  onChange={e => setNutrition({ ...nutrition, potassium: Number(e.target.value) })}
+                  onChange={e => setField('potassium', e.target.value)}
                   className="w-full px-2 py-1 rounded-lg border border-amber-300 font-bold bg-white text-amber-900"
                 />
               </div>
@@ -379,10 +416,10 @@ export const MealTracker: React.FC = () => {
               <div>
                 <label className="text-[11px] font-medium text-slate-600 block">Water / Liquid (ml)</label>
                 <input
-                  type="number"
+                  type="number" step="any"
                   min="0"
-                  value={nutrition.water || 0}
-                  onChange={e => setNutrition({ ...nutrition, water: Number(e.target.value) })}
+                  value={nutrition.water ?? 0}
+                  onChange={e => setField('water', e.target.value)}
                   className="w-full px-2 py-1 rounded-lg border border-slate-200 font-semibold"
                 />
               </div>
@@ -391,6 +428,8 @@ export const MealTracker: React.FC = () => {
 
           {/* REAL-TIME POLICY VALIDATION PREVIEW BANNER */}
           <div
+            role="status"
+            aria-live="polite"
             className={`p-3 rounded-xl border text-xs transition-all ${
               hasViolation
                 ? 'bg-rose-50 border-rose-300 text-rose-900'

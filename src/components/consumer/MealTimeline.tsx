@@ -1,9 +1,9 @@
 ﻿import React, { useState } from 'react';
 import { useNutriCare } from '../../context/NutriCareContext';
-import { MealSlot } from '../../types/meals';
+import {} from '../../types/meals';
 import { PolicyAlertBadge } from '../common/PolicyAlertBadge';
 import { formatKcal, formatGrams, formatMg } from '../../utils/formatters';
-import { Trash2, Clock, Sparkles, Filter, Utensils } from 'lucide-react';
+import { Trash2, Clock, Utensils } from 'lucide-react';
 
 export const MealTimeline: React.FC = () => {
   const { meals, deleteMeal } = useNutriCare();
@@ -27,7 +27,7 @@ export const MealTimeline: React.FC = () => {
 
         {/* Filter slots */}
         <div className="flex items-center gap-1 text-xs">
-          {['All', 'Breakfast', 'Lunch', 'Dinner'].map(slot => (
+          {['All', 'Breakfast', 'Lunch', 'Dinner', 'Snack'].map(slot => (
             <button
               key={slot}
               onClick={() => setSelectedSlot(slot)}
@@ -73,7 +73,7 @@ export const MealTimeline: React.FC = () => {
                       alt={meal.name}
                       className="w-16 h-16 rounded-xl object-cover shadow-soft-sm border border-slate-200"
                     />
-                    <span className="absolute -bottom-1 -right-1 text-[9px] font-bold px-1 py-0.2 rounded bg-slate-900 text-white shadow-xs">
+                    <span className="absolute -bottom-1 -right-1 text-[9px] font-bold px-1 py-0.5 rounded bg-slate-900 text-white shadow-sm">
                       {meal.slot}
                     </span>
                   </div>

@@ -1,4 +1,5 @@
 ﻿import { Meal, NutritionalValues } from '../types/meals';
+import { localDateAt, localIsoDate } from '../utils/dates';
 import { DEFAULT_POLICY_RULES } from '../engine/policyRules';
 import { validateMealPlan } from '../engine/policyEngine';
 
@@ -112,42 +113,24 @@ export const PRESET_MEALS: PresetMealTemplate[] = [
   }
 ];
 
-// Initial pre-loaded meal history for Eleanor Vance
+// Initial pre-loaded meal history for Eleanor Vance (pt-001 only; other patients start empty).
+// Dates are computed from the current day so the seed always shows as "today" / "yesterday".
 export function getInitialMeals(patientId: string): Meal[] {
   const activeRules = DEFAULT_POLICY_RULES.filter(r => r.isActive);
 
   const m1Nutrition: NutritionalValues = {
-    calories: 365,
-    carbs: 54,
-    protein: 13,
-    fat: 11,
-    sodium: 110,
-    fiber: 8.2,
-    potassium: 340,
-    water: 300
+    calories: 365, carbs: 54, protein: 13, fat: 11, sodium: 110, fiber: 8.2, potassium: 340, water: 300
   };
-
   const m2Nutrition: NutritionalValues = {
-    calories: 495,
-    carbs: 52,
-    protein: 36,
-    fat: 16,
-    sodium: 340,
-    fiber: 7.5,
-    potassium: 620,
-    water: 250
+    calories: 495, carbs: 52, protein: 36, fat: 16, sodium: 340, fiber: 7.5, potassium: 620, water: 250
+  };
+  const m3Nutrition: NutritionalValues = {
+    calories: 780, carbs: 86, protein: 29, fat: 34, sodium: 1490, fiber: 2.8, potassium: 480, water: 400
   };
 
-  const m3Nutrition: NutritionalValues = {
-    calories: 780,
-    carbs: 86,
-    protein: 29,
-    fat: 34,
-    sodium: 1490,
-    fiber: 2.8,
-    potassium: 480,
-    water: 400
-  };
+  const m1At = localDateAt(0, 8, 15);
+  const m2At = localDateAt(0, 12, 45);
+  const m3At = localDateAt(1, 19, 20);
 
   return [
     {
@@ -156,6 +139,8 @@ export function getInitialMeals(patientId: string): Meal[] {
       name: 'Steel-Cut Oats with Walnuts & Blueberries',
       slot: 'Breakfast',
       timestamp: 'Today at 08:15 AM',
+      date: localIsoDate(m1At),
+      loggedAt: m1At.getTime(),
       imageUrl: 'https://images.unsplash.com/photo-1517673132405-a56a62b18caf?auto=format&fit=crop&w=600&q=80',
       source: 'photo_scan',
       nutrition: m1Nutrition,
@@ -167,6 +152,8 @@ export function getInitialMeals(patientId: string): Meal[] {
       name: 'Mediterranean Quinoa & Herb Salmon Bowl',
       slot: 'Lunch',
       timestamp: 'Today at 12:45 PM',
+      date: localIsoDate(m2At),
+      loggedAt: m2At.getTime(),
       imageUrl: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=600&q=80',
       source: 'photo_scan',
       nutrition: m2Nutrition,
@@ -178,6 +165,8 @@ export function getInitialMeals(patientId: string): Meal[] {
       name: 'Spicy Shoyu Ramen with Chashu Pork',
       slot: 'Dinner',
       timestamp: 'Yesterday at 07:20 PM',
+      date: localIsoDate(m3At),
+      loggedAt: m3At.getTime(),
       imageUrl: 'https://images.unsplash.com/photo-1569718212165-3a8278d5f624?auto=format&fit=crop&w=600&q=80',
       source: 'manual',
       nutrition: m3Nutrition,
